@@ -1476,6 +1476,7 @@ function showSyncBanner(){
 }
 
 async function init(){
+  showSyncBanner();
   const [customers, engineers, visits, assignments] = await Promise.all([
     storeGet('ftr_customers', null),
     storeGet('ftr_engineers', null),
