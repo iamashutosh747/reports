@@ -1465,7 +1465,7 @@ function showSyncBanner(){
     el.style.display = 'block';
     el.style.background = 'var(--ok-soft)'; el.style.color = 'var(--ok)';
     el.textContent = '● Synced with Firebase — changes are shared across every device';
-    setTimeout(()=>{ el.style.display='none'; }, 4000); // don't nag once it's working
+    // setTimeout(()=>{ el.style.display='none'; }, 4000); // don't nag once it's working
   } else {
     el.style.display = 'block';
     el.style.background = 'var(--warn-soft)'; el.style.color = 'var(--warn)';
