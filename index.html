@@ -1,0 +1,1519 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Print Cell — Field Service Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1C1D21">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --bg:#F7F5F0;
+    --surface:#FFFFFF;
+    --ink:#1C1D21;
+    --ink-soft:#5B5C63;
+    --ink-faint:#8B8C93;
+    --accent:#2451B0;
+    --accent-soft:#E7EEFB;
+    --accent-dark:#173B87;
+    --warn:#C64C3C;
+    --warn-soft:#FBEAE7;
+    --ok:#2E7D4F;
+    --ok-soft:#E8F3EC;
+    --amber:#B8791A;
+    --amber-soft:#FBF1E1;
+    --line:#E2DED2;
+    --line-strong:#C9C4B4;
+    --radius:10px;
+    --shadow: 0 1px 2px rgba(28,29,33,0.04), 0 4px 14px rgba(28,29,33,0.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',sans-serif;-webkit-font-smoothing:antialiased;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  #app{min-height:100vh;display:flex;flex-direction:column;}
+
+  /* Header */
+  header.top{background:var(--ink);color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand .mark{width:34px;height:34px;border-radius:50%;border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;color:#fff;background:var(--accent-dark);flex-shrink:0;}
+  .brand h1{font-size:16px;margin:0;font-weight:600;letter-spacing:0.2px;}
+  .brand p{margin:0;font-size:11.5px;color:#B9BAC2;font-family:'IBM Plex Mono',monospace;letter-spacing:0.3px;}
+  nav.tabs{display:flex;gap:4px;flex-wrap:wrap;align-items:center;}
+  nav.tabs button{background:transparent;border:1px solid transparent;color:#C7C8D0;font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:500;padding:8px 12px;border-radius:8px;cursor:pointer;transition:all .15s;}
+  nav.tabs button:hover{color:#fff;background:rgba(255,255,255,0.06);}
+  nav.tabs button.active{background:var(--accent);color:#fff;}
+
+  .cal-toggle{display:flex;border:1px solid #45464F;border-radius:8px;overflow:hidden;margin-left:6px;}
+  .cal-toggle button{background:transparent;border:none;color:#C7C8D0;font-size:11.5px;font-weight:600;padding:7px 10px;cursor:pointer;font-family:'IBM Plex Mono',monospace;letter-spacing:0.4px;}
+  .cal-toggle button.active{background:var(--amber);color:#1C1D21;}
+
+  main{flex:1;padding:24px;max-width:1180px;width:100%;margin:0 auto;}
+  .view{display:none;}
+  .view.active{display:block;animation:fade .18s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+
+  .row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+  .view h2{font-size:20px;margin:0 0 2px;font-weight:600;}
+  .view .sub{color:var(--ink-soft);font-size:13px;margin:0;}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:16px;}
+  .card h3{margin:0 0 12px;font-size:14px;text-transform:uppercase;letter-spacing:0.6px;color:var(--ink-soft);font-weight:600;}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink-faint);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line-strong);}
+  td{padding:10px 10px;border-bottom:1px solid var(--line);vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:#FAFAF7;}
+
+  button{font-family:'IBM Plex Sans',sans-serif;}
+  .btn{background:var(--accent);color:#fff;border:none;padding:9px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;}
+  .btn:hover{background:var(--accent-dark);}
+  .btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent);}
+  .btn.ghost:hover{background:var(--accent-soft);}
+  .btn.warn{background:var(--warn);}
+  .btn.warn:hover{background:#a53c2e;}
+  .btn.small{padding:5px 10px;font-size:12px;border-radius:6px;}
+  .btn:disabled{opacity:0.45;cursor:not-allowed;}
+  .btn.subtle{background:var(--bg);color:var(--ink);border:1px solid var(--line-strong);}
+  .btn.subtle:hover{background:#EFECE2;}
+
+  input,select,textarea{font-family:'IBM Plex Sans',sans-serif;font-size:13.5px;padding:8px 10px;border:1px solid var(--line-strong);border-radius:7px;background:#fff;color:var(--ink);width:100%;}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent);}
+  label{display:block;font-size:11.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.4px;}
+  .field{margin-bottom:12px;}
+  .hint{font-size:11px;color:var(--ink-faint);margin-top:3px;text-transform:none;letter-spacing:0;font-weight:400;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+  @media(max-width:700px){.grid2,.grid3{grid-template-columns:1fr;}}
+
+  /* stamp badges — signature element */
+  .stamp{display:inline-flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:0.6px;padding:3px 9px;border-radius:5px;border:1.5px dashed currentColor;transform:rotate(-2deg);white-space:nowrap;}
+  .stamp.sch{color:var(--accent);background:var(--accent-soft);}
+  .stamp.oc{color:var(--amber);background:var(--amber-soft);}
+  .stamp.overdue{color:var(--warn);background:var(--warn-soft);transform:rotate(-3deg);}
+  .stamp.done{color:var(--ok);background:var(--ok-soft);transform:rotate(1deg);}
+  .stamp.pending{color:var(--ink-soft);background:#EFECE2;transform:rotate(1deg);}
+
+  .chip{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;background:var(--accent-soft);color:var(--accent-dark);margin:0 4px 4px 0;font-weight:600;}
+
+  .empty{padding:32px 16px;text-align:center;color:var(--ink-faint);font-size:13.5px;}
+  .empty .big{font-size:28px;margin-bottom:6px;}
+
+  .chk-list{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .chk-item{display:flex;align-items:center;gap:6px;font-size:13px;}
+  .chk-item input{width:auto;}
+  .chk-item label{margin:0;text-transform:none;font-weight:400;font-size:13px;color:var(--ink);}
+
+  .eng-chip-select{display:flex;flex-wrap:wrap;gap:5px;max-width:220px;}
+  .chip-toggle{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;padding:4px 8px;border-radius:20px;border:1px solid var(--line-strong);background:#fff;cursor:pointer;user-select:none;color:var(--ink-soft);}
+  .chip-toggle input{width:auto;margin:0;accent-color:var(--accent);}
+  .chip-toggle.has-check{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-dark);font-weight:600;}
+
+  .ts-row{display:flex;gap:8px;margin-bottom:6px;align-items:center;}
+  .ts-row span.arrow{color:var(--accent);font-weight:700;}
+  .ts-row input{flex:1;}
+  .ts-row button{flex-shrink:0;}
+
+  .feedback-row{display:flex;gap:10px;}
+  .feedback-opt{flex:1;text-align:center;padding:10px 4px;border:2px solid var(--line-strong);border-radius:8px;cursor:pointer;font-size:22px;background:#fff;}
+  .feedback-opt.selected{border-color:var(--accent);background:var(--accent-soft);}
+  .feedback-opt .lbl{font-size:10px;color:var(--ink-soft);margin-top:3px;text-transform:uppercase;letter-spacing:0.3px;}
+
+  /* modal */
+  .overlay{position:fixed;inset:0;background:rgba(28,29,33,0.55);display:none;align-items:flex-start;justify-content:center;padding:30px 16px;z-index:50;overflow-y:auto;}
+  .overlay.open{display:flex;}
+  .modal{background:#fff;border-radius:14px;max-width:640px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);margin-bottom:40px;}
+  .modal-head{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start;position:sticky;top:0;background:#fff;border-radius:14px 14px 0 0;}
+  .modal-head h3{margin:0;font-size:16px;}
+  .modal-head p{margin:2px 0 0;font-size:12.5px;color:var(--ink-soft);}
+  .modal-body{padding:20px 22px;}
+  .modal-foot{padding:16px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px;}
+  .x-close{background:none;border:none;font-size:20px;color:var(--ink-faint);cursor:pointer;line-height:1;padding:4px;}
+
+  .progress-track{height:8px;background:var(--bg);border-radius:5px;overflow:hidden;border:1px solid var(--line);}
+  .progress-fill{height:100%;background:var(--accent);border-radius:5px;}
+  .progress-fill.behind{background:var(--warn);}
+  .progress-fill.ahead{background:var(--ok);}
+
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:9px;font-size:13.5px;box-shadow:var(--shadow);z-index:80;display:none;max-width:520px;}
+  .toast.show{display:block;}
+  .toast .copybtn{margin-left:10px;background:var(--accent);border:none;color:#fff;padding:5px 10px;border-radius:6px;font-size:12px;cursor:pointer;}
+
+  .kv{font-size:13px;color:var(--ink-soft);line-height:1.7;}
+  .kv b{color:var(--ink);font-weight:600;}
+
+  .note{background:var(--amber-soft);border:1px solid #E6CD9B;color:#7A5411;padding:10px 12px;border-radius:8px;font-size:12.5px;line-height:1.5;}
+
+  .icon-btn{background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:15px;padding:2px 4px;}
+  .icon-btn:hover{color:var(--warn);}
+
+  .chart-wrap{overflow-x:auto;}
+  .chart-legend{display:flex;gap:16px;font-size:12px;color:var(--ink-soft);margin-bottom:10px;}
+  .chart-legend span{display:inline-flex;align-items:center;gap:5px;}
+  .chart-legend i{width:10px;height:10px;border-radius:3px;display:inline-block;}
+
+  .period-nav{display:flex;align-items:center;gap:8px;}
+  .period-nav .lbl{font-family:'IBM Plex Mono',monospace;font-size:13px;min-width:90px;text-align:center;}
+
+  ::placeholder{color:var(--ink-faint);}
+  footer.foot{padding:16px 24px;text-align:center;font-size:11.5px;color:var(--ink-faint);font-family:'IBM Plex Mono',monospace;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="sync-banner" style="display:none;padding:8px 16px;font-size:12px;text-align:center;font-family:'IBM Plex Mono',monospace;"></div>
+  <header class="top">
+    <div class="brand">
+      <div class="mark">PC</div>
+      <div>
+        <h1>Field Service Manager</h1>
+        <p>PRINT CELL IMAGING · KUPONDOL, LALITPUR</p>
+      </div>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button data-view="week" class="active">This Week</button>
+      <button data-view="engineer">Engineer View</button>
+      <button data-view="log">Log Sheet</button>
+      <button data-view="dashboard">Dashboard</button>
+      <button data-view="setup">Setup</button>
+      <div class="cal-toggle" id="cal-toggle" title="Display dates in AD or BS (Bikram Sambat)">
+        <button data-mode="AD" class="active">AD</button>
+        <button data-mode="BS">BS</button>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- ============ THIS WEEK (Manager) ============ -->
+    <section class="view" id="view-week">
+      <div class="row">
+        <div>
+          <h2>This week's schedule</h2>
+          <p class="sub">Due list = last SCH visit + 21 days. Sunday morning: assign engineers, then add any on-call jobs below. ★ marks a customer's usual engineer.</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn subtle small" id="week-prev">‹ Prev</button>
+          <span class="mono" id="week-range" style="font-size:12.5px;color:var(--ink-soft);"></span>
+          <button class="btn subtle small" id="week-next">Next ›</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Due for scheduled service</h3>
+        <div id="due-list"></div>
+      </div>
+
+      <div class="card">
+        <h3>Assigned this week</h3>
+        <div id="assigned-list"></div>
+      </div>
+
+      <div class="card">
+        <h3>Add on-call / extra visit</h3>
+        <div class="grid2">
+          <div class="field">
+            <label>Date</label>
+            <input type="date" id="oc-date">
+          </div>
+          <div class="field">
+            <label>Customer</label>
+            <select id="oc-customer"></select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Engineers on this call</label>
+          <div class="chk-list" id="oc-engineers"></div>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label>Visit type</label>
+            <select id="oc-type">
+              <option value="OC">OC — On-call</option>
+              <option value="SCH">SCH — Scheduled</option>
+            </select>
+          </div>
+          <div class="field" style="align-self:end;">
+            <button class="btn" id="oc-add">Add to schedule</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ENGINEER VIEW ============ -->
+    <section class="view" id="view-engineer">
+      <div class="row">
+        <div>
+          <h2>Engineer view</h2>
+          <p class="sub">Today's visits for the selected engineer. Fill the FTR when a job is complete.</p>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <select id="eng-select" style="min-width:150px;"></select>
+          <input type="date" id="eng-date" style="min-width:150px;">
+        </div>
+      </div>
+      <div class="card">
+        <div id="eng-visit-list"></div>
+      </div>
+    </section>
+
+    <!-- ============ LOG SHEET ============ -->
+    <section class="view" id="view-log">
+      <div class="row">
+        <div>
+          <h2>Visit log</h2>
+          <p class="sub">Every completed visit, by every engineer, for every customer.</p>
+        </div>
+        <button class="btn ghost small" id="log-export">Export CSV</button>
+      </div>
+      <div class="card">
+        <div class="grid3" style="margin-bottom:4px;">
+          <div class="field"><label>Engineer</label><select id="log-f-eng"><option value="">All</option></select></div>
+          <div class="field"><label>Customer</label><select id="log-f-cust"><option value="">All</option></select></div>
+          <div class="field"><label>Type</label><select id="log-f-type"><option value="">All</option><option value="SCH">SCH</option><option value="OC">OC</option></select></div>
+        </div>
+        <div id="log-table"></div>
+      </div>
+    </section>
+
+    <!-- ============ DASHBOARD ============ -->
+    <section class="view" id="view-dashboard">
+      <div class="row">
+        <div>
+          <h2>Service coverage</h2>
+          <p class="sub">Tracked by Nepal's fiscal year (Shrawan–Ashar). 17 SCH visits/year is the full-year goal, prorated from install date. "Target to date" is how many of those should be done by today, rounded down — e.g. 25% into the fiscal year ≈ 4.</p>
+        </div>
+        <div class="period-nav">
+          <button class="btn subtle small" id="dash-prev">‹</button>
+          <div style="text-align:center;">
+            <div class="lbl" id="dash-period-label"></div>
+            <div class="mono" id="dash-period-sub" style="font-size:10.5px;color:var(--ink-faint);"></div>
+          </div>
+          <button class="btn subtle small" id="dash-next">›</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Coverage by customer</h3>
+        <div class="chart-legend">
+          <span><i style="background:#2451B0;"></i>SCH visits</span>
+          <span><i style="background:#1C1D21;width:14px;height:2px;border-radius:0;"></i>Target to date</span>
+        </div>
+        <div class="chart-wrap" id="dash-chart-coverage"></div>
+      </div>
+
+      <div class="card">
+        <div id="dash-table"></div>
+      </div>
+
+      <div class="card">
+        <h3>Visits per month</h3>
+        <div class="chart-legend">
+          <span><i style="background:#2451B0;"></i>SCH</span>
+          <span><i style="background:#B8791A;"></i>OC</span>
+        </div>
+        <div class="chart-wrap" id="dash-chart-monthly"></div>
+      </div>
+
+      <div class="card">
+        <h3>Engineer load</h3>
+        <div class="chart-legend">
+          <span><i style="background:#2451B0;"></i>SCH</span>
+          <span><i style="background:#B8791A;"></i>OC</span>
+        </div>
+        <div class="chart-wrap" id="dash-chart-engineers"></div>
+      </div>
+    </section>
+
+    <!-- ============ SETUP ============ -->
+    <section class="view" id="view-setup">
+      <div class="row">
+        <div>
+          <h2>Setup</h2>
+          <p class="sub">Customers, machines, and engineers. This data is shared — everyone using this app sees the same list.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row" style="margin-bottom:10px;">
+          <h3 style="margin:0;">Engineers</h3>
+          <button class="btn small" id="eng-add-btn">+ Add engineer</button>
+        </div>
+        <div id="engineer-table"></div>
+      </div>
+
+      <div class="card">
+        <div class="row" style="margin-bottom:10px;">
+          <h3 style="margin:0;">Customers &amp; machines</h3>
+          <button class="btn small" id="cust-add-btn">+ Add customer</button>
+        </div>
+        <div id="customer-table"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="foot">FIELD TRIP REPORT SYSTEM — DIGITIZED FROM PAPER FTR — v2</footer>
+</div>
+
+<!-- FTR ENTRY MODAL -->
+<div class="overlay" id="ftr-overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h3>Field Trip Report</h3>
+        <p id="ftr-sub"></p>
+      </div>
+      <button class="x-close" id="ftr-close">✕</button>
+    </div>
+    <div class="modal-body" id="ftr-body"></div>
+    <div class="modal-foot">
+      <button class="btn subtle" id="ftr-cancel">Cancel</button>
+      <button class="btn" id="ftr-save">Save &amp; send to customer</button>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOMER EDIT MODAL -->
+<div class="overlay" id="cust-overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div><h3 id="cust-modal-title">Add customer</h3></div>
+      <button class="x-close" id="cust-close">✕</button>
+    </div>
+    <div class="modal-body" id="cust-body"></div>
+    <div class="modal-foot">
+      <button class="btn warn ghost" id="cust-delete" style="margin-right:auto;display:none;">Delete customer</button>
+      <button class="btn subtle" id="cust-cancel">Cancel</button>
+      <button class="btn" id="cust-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===================== STORAGE (Firebase Firestore) =====================
+   SETUP — one time, ~15 minutes:
+   1. Go to https://console.firebase.google.com -> "Add project" (free tier is plenty).
+   2. In the left menu: Build > Firestore Database > "Create database" > start in
+      test mode (or use the rule below).
+   3. Project settings (gear icon, top left) > General > "Your apps" > Add app > Web (</>).
+      Give it any nickname, skip hosting. Firebase will show you a firebaseConfig object.
+   4. Paste that object below, replacing FIREBASE_CONFIG.
+   5. In Firestore > Rules, for a quick start (fine for an internal team tool, not for
+      the public internet) use:
+         rules_version = '2';
+         service cloud.firestore {
+           match /databases/{database}/documents {
+             match /ftr_state/{doc} { allow read, write: if true; }
+           }
+         }
+      Click "Publish". For real access control later, add Firebase Auth and restrict
+      by signed-in user instead of "if true".
+   Until this is filled in, the app still runs, but nothing saves or syncs. */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAwTBalPocr62lueBTfCsGJUN5bpC05Z1I",
+  authDomain: "ftr-digital.firebaseapp.com",
+  projectId: "ftr-digital",
+  storageBucket: "ftr-digital.firebasestorage.app",
+  messagingSenderId: "322584850374",
+  appId: "1:322584850374:web:c0e2caa4bf35f890748cc7"
+};
+
+let fsDb = null;
+const FS_CONFIGURED = FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey.indexOf('PASTE') === -1;
+if(FS_CONFIGURED && typeof firebase !== 'undefined'){
+  try{
+    firebase.initializeApp(FIREBASE_CONFIG);
+    fsDb = firebase.firestore();
+    fsDb.enablePersistence({synchronizeTabs:true}).catch(()=>{}); // offline queueing, best-effort
+  }catch(e){ console.error('Firebase init failed', e); }
+} else if(FS_CONFIGURED){
+  console.warn('Firebase config is set, but the Firebase SDK script did not load (likely blocked network access in this preview environment). Data will not sync here — this is expected inside Claude\'s artifact preview, and will work once hosted for real.');
+} else {
+  console.warn('Firebase not configured — data will not be saved or synced. See setup notes at the top of the <script> tag.');
+}
+
+async function storeGet(key, fallback){
+  if(!fsDb) return fallback;
+  try{
+    const snap = await fsDb.collection('ftr_state').doc(key).get();
+    return snap.exists ? JSON.parse(snap.data().json) : fallback;
+  }catch(e){ console.error('Firestore get failed', key, e); return fallback; }
+}
+async function storeSet(key, value){
+  if(!fsDb) return;
+  try{ await fsDb.collection('ftr_state').doc(key).set({ json: JSON.stringify(value), updatedAt: Date.now() }); }
+  catch(e){ console.error('Firestore set failed', key, e); showToast('Could not sync — check your connection.'); }
+}
+// Live sync: whenever any device (including this one) writes a doc, every open
+// app updates its in-memory DB and re-renders — this is what makes it "live".
+function attachLiveSync(){
+  if(!fsDb) return;
+  const fields = { ftr_customers:'customers', ftr_engineers:'engineers', ftr_visits:'visits', ftr_assignments:'assignments' };
+  Object.keys(fields).forEach(key=>{
+    fsDb.collection('ftr_state').doc(key).onSnapshot(snap=>{
+      if(!snap.exists) return;
+      try{
+        DB[fields[key]] = JSON.parse(snap.data().json);
+        if(fields[key]==='customers'){
+          DB.customers.forEach(c=>{ if(!c.assignedEngineers) c.assignedEngineers=[]; if(c.installDate===undefined) c.installDate=''; });
+        }
+        renderAll();
+      }catch(e){ console.error('live sync parse error', key, e); }
+    }, err=>{ console.error('live sync error', key, err); showToast('Sync connection lost — check your internet.'); });
+  });
+}
+
+/* ===================== STATE ===================== */
+let DB = {
+  customers: [],
+  engineers: [],
+  visits: [],
+  assignments: {} // dateStr -> [ {id, customerId, engineerIds:[...], type, status, visitId} ]
+};
+
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'id-'+Math.random().toString(36).slice(2)+Date.now());
+
+const PROBLEM_OPTIONS = ["CTP","PROCESSOR","UDRC","SOFTWARE","MEDIA","KM","KOMORI","NEXPRESS","SOLIDBIND"];
+const MACHINE_BRANDS = ["Konica Minolta","Kodak","Komori","Solidbind","Other"];
+const YEARLY_TARGET = 17;
+const COLORS = { accent:'#2451B0', warn:'#C64C3C', ok:'#2E7D4F', amber:'#B8791A', faint:'#EFECE2', ink:'#1C1D21', inkFaint:'#8B8C93' };
+
+/* ===================== SEED DATA (editable in Setup) ===================== */
+function seedData(){
+  const c1 = uid(), e1 = uid();
+  return {
+    customers: [
+      {
+        id: c1,
+        name: "Manjushree Multi Graphic Press Pvt. Ltd.",
+        address: "",
+        contactPerson: "Kiran",
+        phone: "",
+        initialLastVisit: "",   // seed value used only until real visits exist
+        installDate: "",         // when the machine/contract started — prorates the yearly target
+        assignedEngineers: [e1], // engineers usually assigned to this customer
+        machines: [
+          { id: uid(), brand: "Konica Minolta", model: "C12000", serial: "" }
+        ]
+      }
+    ],
+    engineers: [
+      { id: e1, name: "Keshab" }
+    ],
+    visits: [],
+    assignments: {}
+  };
+}
+
+/* ===================== DATE HELPERS (AD) ===================== */
+function fmtDate(d){ // yyyy-mm-dd
+  const yy = d.getFullYear(), mm = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
+  return `${yy}-${mm}-${dd}`;
+}
+function parseDate(s){ if(!s) return null; const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); }
+function addDays(d, n){ const nd = new Date(d); nd.setDate(nd.getDate()+n); return nd; }
+function today(){ const d = new Date(); d.setHours(0,0,0,0); return d; }
+function mondayOf(d){ const nd = new Date(d); const day = nd.getDay(); const diff = (day===0? -6 : 1-day); return addDays(nd, diff); }
+
+/* ===================== BS (BIKRAM SAMBAT) CALENDAR =====================
+   Official Nepali calendar month-length table, Baisakh..Chaitra, BS 2000–2090
+   (BS 2000-01-01 = 13 April 1943 AD). This is factual calendar day-count
+   data, cross-checked against the published total day count for this range. */
+const BS_MONTH_DAYS = {
+  2000:[30,32,31,32,31,30,30,30,29,30,29,31],
+  2001:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2002:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2003:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2004:[30,32,31,32,31,30,30,30,29,30,29,31],
+  2005:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2006:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2007:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2008:[31,31,31,32,31,31,29,30,30,29,29,31],
+  2009:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2010:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2011:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2012:[31,31,31,32,31,31,29,30,30,29,30,30],
+  2013:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2014:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2015:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2016:[31,31,31,32,31,31,29,30,30,29,30,30],
+  2017:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2018:[31,32,31,32,31,30,30,29,30,29,30,30],
+  2019:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2020:[31,31,31,32,31,31,30,29,30,29,30,30],
+  2021:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2022:[31,32,31,32,31,30,30,30,29,29,30,30],
+  2023:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2024:[31,31,31,32,31,31,30,29,30,29,30,30],
+  2025:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2026:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2027:[30,32,31,32,31,30,30,30,29,30,29,31],
+  2028:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2029:[31,31,32,31,32,30,30,29,30,29,30,30],
+  2030:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2031:[30,32,31,32,31,30,30,30,29,30,29,31],
+  2032:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2033:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2034:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2035:[30,32,31,32,31,31,29,30,30,29,29,31],
+  2036:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2037:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2038:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2039:[31,31,31,32,31,31,29,30,30,29,30,30],
+  2040:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2041:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2042:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2043:[31,31,31,32,31,31,29,30,30,29,30,30],
+  2044:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2045:[31,32,31,32,31,30,30,29,30,29,30,30],
+  2046:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2047:[31,31,31,32,31,31,30,29,30,29,30,30],
+  2048:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2049:[31,32,31,32,31,30,30,30,29,29,30,30],
+  2050:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2051:[31,31,31,32,31,31,30,29,30,29,30,30],
+  2052:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2053:[31,32,31,32,31,30,30,30,29,29,30,30],
+  2054:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2055:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2056:[31,31,32,31,32,30,30,29,30,29,30,30],
+  2057:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2058:[30,32,31,32,31,30,30,30,29,30,29,31],
+  2059:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2060:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2061:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2062:[30,32,31,32,31,31,29,30,29,30,29,31],
+  2063:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2064:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2065:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2066:[31,31,31,32,31,31,29,30,30,29,29,31],
+  2067:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2068:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2069:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2070:[31,31,31,32,31,31,29,30,30,29,30,30],
+  2071:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2072:[31,32,31,32,31,30,30,29,30,29,30,30],
+  2073:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2074:[31,31,31,32,31,31,30,29,30,29,30,30],
+  2075:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2076:[31,32,31,32,31,30,30,30,29,29,30,30],
+  2077:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2078:[31,31,31,32,31,31,30,29,30,29,30,30],
+  2079:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2080:[31,32,31,32,31,30,30,30,29,29,30,30],
+  2081:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2082:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2083:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2084:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2085:[30,32,31,32,31,30,30,30,29,30,29,31],
+  2086:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2087:[31,31,32,31,31,31,30,30,29,30,30,30],
+  2088:[30,31,32,32,30,31,30,30,29,30,30,30],
+  2089:[30,32,31,32,31,30,30,30,29,30,30,30],
+  2090:[30,32,31,32,31,30,30,30,29,30,30,30]
+};
+const BS_EPOCH_AD = new Date(1943, 3, 14); // BS 2000-01-01
+const BS_MONTH_NAMES = ["Baisakh","Jestha","Asar","Shrawan","Bhadra","Aswin","Kartik","Mangsir","Poush","Magh","Falgun","Chaitra"];
+
+function bsDaysInYear(y){ const m = BS_MONTH_DAYS[y]; return m ? m.reduce((a,b)=>a+b,0) : null; }
+
+function adToBs(adDate){
+  const d = new Date(adDate); d.setHours(0,0,0,0);
+  let diff = Math.round((d - BS_EPOCH_AD)/86400000); // 0-based day offset from epoch
+  if(diff < 0) return null;
+  let y = 2000;
+  while(true){
+    const yd = bsDaysInYear(y);
+    if(yd==null) return null;
+    if(diff < yd) break;
+    diff -= yd; y++;
+    if(y > 2090) return null;
+  }
+  const months = BS_MONTH_DAYS[y];
+  let m = 0;
+  while(diff >= months[m]){ diff -= months[m]; m++; }
+  return { year:y, month:m+1, day:diff+1 };
+}
+function bsToAd(y, m, day){
+  if(!BS_MONTH_DAYS[y]) return null;
+  let total = 0;
+  for(let yy=2000; yy<y; yy++){ const yd = bsDaysInYear(yy); if(yd==null) return null; total += yd; }
+  const months = BS_MONTH_DAYS[y];
+  for(let mm=0; mm<m-1; mm++) total += months[mm];
+  total += (day-1);
+  return addDays(BS_EPOCH_AD, total);
+}
+function bsLastDayOfMonth(y, m){ const months = BS_MONTH_DAYS[y]; return months ? months[m-1] : 30; }
+
+/* ===================== GLOBAL DISPLAY MODE ===================== */
+let dateMode = 'AD'; // 'AD' | 'BS' — affects display only, not the underlying data
+
+function humanDate(s){
+  const d = (s instanceof Date) ? s : parseDate(s);
+  if(!d) return '—';
+  if(dateMode === 'BS'){
+    const bs = adToBs(d);
+    if(!bs) return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+    return `${String(bs.day).padStart(2,'0')} ${BS_MONTH_NAMES[bs.month-1].slice(0,3)} ${bs.year}`;
+  }
+  return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+}
+
+document.getElementById('cal-toggle').addEventListener('click', e=>{
+  const btn = e.target.closest('button[data-mode]');
+  if(!btn) return;
+  dateMode = btn.dataset.mode;
+  document.querySelectorAll('#cal-toggle button').forEach(b=>b.classList.toggle('active', b.dataset.mode===dateMode));
+  renderAll();
+});
+
+/* ===================== SCHEDULING LOGIC ===================== */
+let weekOffset = 0; // 0 = current week
+
+function getWeekRange(){
+  const base = addDays(today(), weekOffset*7);
+  const start = mondayOf(base);
+  const end = addDays(start, 6);
+  return {start, end};
+}
+function lastSchVisitDate(customerId){
+  const visits = DB.visits.filter(v => v.customerId===customerId && v.type==='SCH').sort((a,b)=> a.date < b.date ? 1 : -1);
+  if(visits.length) return visits[0].date;
+  const c = DB.customers.find(c=>c.id===customerId);
+  return c && c.initialLastVisit ? c.initialLastVisit : null;
+}
+function nextDueDate(customerId){
+  const last = lastSchVisitDate(customerId);
+  if(!last) return null; // never serviced — treat as needs scheduling now
+  return fmtDate(addDays(parseDate(last), 21));
+}
+function isAssignedInWeek(customerId, start, end){
+  for(const dateStr in DB.assignments){
+    const d = parseDate(dateStr);
+    if(d>=start && d<=end){
+      if(DB.assignments[dateStr].some(a=>a.customerId===customerId)) return true;
+    }
+  }
+  return false;
+}
+/* ===================== RENDER: NAV ===================== */
+function showView(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  document.querySelectorAll('#tabs button[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view===name));
+  renderAll();
+}
+document.getElementById('tabs').addEventListener('click', e=>{
+  const btn = e.target.closest('button[data-view]');
+  if(btn) showView(btn.dataset.view);
+});
+
+/* ===================== RENDER: WEEK VIEW ===================== */
+function engineerChipSelect(name, c){
+  const assigned = (c && c.assignedEngineers) || [];
+  const sorted = [...DB.engineers].sort((a,b)=>{
+    const ai = assigned.includes(a.id) ? 0 : 1, bi = assigned.includes(b.id) ? 0 : 1;
+    return ai - bi;
+  });
+  if(sorted.length===0) return `<div style="font-size:11.5px;color:var(--ink-faint);">Add engineers in Setup</div>`;
+  return `<div class="eng-chip-select" data-name="${name}">${sorted.map(e=>`
+    <label class="chip-toggle ${assigned.includes(e.id)?'has-check':''}">
+      <input type="checkbox" value="${e.id}" ${assigned.includes(e.id)?'checked':''}>${assigned.includes(e.id)?'★ ':''}${esc(e.name)}
+    </label>`).join('')}</div>`;
+}
+function wireChipSelect(container){
+  container.querySelectorAll('.eng-chip-select').forEach(box=>{
+    box.querySelectorAll('input[type=checkbox]').forEach(chk=>{
+      chk.addEventListener('change', ()=>{ chk.closest('.chip-toggle').classList.toggle('has-check', chk.checked); });
+    });
+  });
+}
+function checkedEngineerIds(scope){
+  return Array.from(scope.querySelectorAll('input[type=checkbox]:checked')).map(i=>i.value);
+}
+
+function renderWeek(){
+  const {start,end} = getWeekRange();
+  document.getElementById('week-range').textContent = `${humanDate(start)} → ${humanDate(end)}`;
+
+  const dueBox = document.getElementById('due-list');
+  const candidates = DB.customers.filter(c=>{
+    if(isAssignedInWeek(c.id, start, end)) return false;
+    const due = nextDueDate(c.id);
+    if(!due) return true; // never serviced -> always show
+    return parseDate(due) <= end;
+  });
+
+  if(candidates.length===0){
+    dueBox.innerHTML = `<div class="empty"><div class="big">✓</div>Nothing due — everything is assigned or not yet due.</div>`;
+  } else {
+    dueBox.innerHTML = `<table><thead><tr><th>Customer</th><th>Machine</th><th>Last SCH</th><th>Due</th><th>Assign engineer(s)</th><th>Date</th><th></th></tr></thead><tbody>${
+      candidates.map(c=>{
+        const due = nextDueDate(c.id);
+        const overdue = due && parseDate(due) < start;
+        const never = !due;
+        const machines = c.machines.map(m=>`${m.brand} ${m.model}`).join(', ') || '—';
+        const defaultDate = due ? (parseDate(due) < start ? start : parseDate(due)) : today();
+        return `<tr data-cid="${c.id}">
+          <td><b>${esc(c.name)}</b><div class="mono" style="font-size:11px;color:var(--ink-faint);">${esc(c.contactPerson||'')}</div></td>
+          <td style="font-size:12.5px;">${esc(machines)}</td>
+          <td class="mono" style="font-size:12px;">${lastSchVisitDate(c.id)?humanDate(lastSchVisitDate(c.id)):'never'}</td>
+          <td>${never? `<span class="stamp overdue">NEW</span>` : overdue? `<span class="stamp overdue">OVERDUE</span>` : `<span class="stamp sch">${humanDate(due)}</span>`}</td>
+          <td>${engineerChipSelect('assign', c)}</td>
+          <td><input type="date" class="assign-date" value="${fmtDate(defaultDate)}" style="min-width:135px;"></td>
+          <td><button class="btn small do-assign">Assign</button></td>
+        </tr>`;
+      }).join('')
+    }</tbody></table>`;
+    wireChipSelect(dueBox);
+  }
+
+  const assignedBox = document.getElementById('assigned-list');
+  let rows = [];
+  Object.keys(DB.assignments).sort().forEach(dateStr=>{
+    const d = parseDate(dateStr);
+    if(d<start || d>end) return;
+    DB.assignments[dateStr].forEach(a=>{
+      const cust = DB.customers.find(c=>c.id===a.customerId);
+      const engs = (a.engineerIds||[]).map(id=>DB.engineers.find(e=>e.id===id)).filter(Boolean);
+      rows.push({dateStr, a, cust, engs});
+    });
+  });
+  if(rows.length===0){
+    assignedBox.innerHTML = `<div class="empty">No visits assigned for this week yet.</div>`;
+  } else {
+    rows.sort((x,y)=> x.dateStr<y.dateStr?-1:1);
+    assignedBox.innerHTML = `<table><thead><tr><th>Date</th><th>Customer</th><th>Engineer(s)</th><th>Type</th><th>Status</th><th></th></tr></thead><tbody>${
+      rows.map(r=>`<tr>
+        <td class="mono" style="font-size:12.5px;">${humanDate(r.dateStr)}</td>
+        <td>${r.cust?esc(r.cust.name):'<i>deleted</i>'}</td>
+        <td>${r.engs.length? r.engs.map(e=>esc(e.name)).join(', ') : '<i>unassigned</i>'}</td>
+        <td><span class="stamp ${r.a.type==='SCH'?'sch':'oc'}">${r.a.type}</span></td>
+        <td><span class="stamp ${r.a.status==='done'?'done':'pending'}">${r.a.status.toUpperCase()}</span></td>
+        <td><button class="icon-btn remove-assign" data-date="${r.dateStr}" data-id="${r.a.id}" title="Remove">✕</button></td>
+      </tr>`).join('')
+    }</tbody></table>`;
+  }
+
+  fillSelect(document.getElementById('oc-customer'), DB.customers, c=>c.id, c=>c.name);
+  const ocCust = DB.customers.find(c=>c.id===document.getElementById('oc-customer').value);
+  document.getElementById('oc-engineers').innerHTML = engineerChipSelect('oc', ocCust);
+  wireChipSelect(document.getElementById('oc-engineers').parentElement);
+  if(!document.getElementById('oc-date').value) document.getElementById('oc-date').value = fmtDate(today());
+}
+
+function fillSelect(sel, items, val, label){
+  sel.innerHTML = items.map(i=>`<option value="${val(i)}">${esc(label(i))}</option>`).join('') || `<option value="">—</option>`;
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+document.getElementById('week-prev').onclick = ()=>{ weekOffset--; renderWeek(); };
+document.getElementById('week-next').onclick = ()=>{ weekOffset++; renderWeek(); };
+
+document.getElementById('due-list').addEventListener('click', async e=>{
+  const btn = e.target.closest('.do-assign');
+  if(!btn) return;
+  const tr = btn.closest('tr');
+  const cid = tr.dataset.cid;
+  const engineerIds = checkedEngineerIds(tr);
+  const date = tr.querySelector('.assign-date').value;
+  if(engineerIds.length===0 || !date){ showToast('Pick at least one engineer and a date first.'); return; }
+  await addAssignment(date, cid, engineerIds, 'SCH');
+  renderWeek();
+});
+
+document.getElementById('assigned-list').addEventListener('click', async e=>{
+  const btn = e.target.closest('.remove-assign');
+  if(!btn) return;
+  const {date, id} = btn.dataset;
+  DB.assignments[date] = (DB.assignments[date]||[]).filter(a=>a.id!==id);
+  if(DB.assignments[date].length===0) delete DB.assignments[date];
+  await storeSet('ftr_assignments', DB.assignments);
+  renderWeek(); renderEngineer();
+});
+
+document.getElementById('oc-customer').addEventListener('change', ()=>{
+  const c = DB.customers.find(c=>c.id===document.getElementById('oc-customer').value);
+  const box = document.getElementById('oc-engineers');
+  box.innerHTML = engineerChipSelect('oc', c);
+  wireChipSelect(box.parentElement);
+});
+
+document.getElementById('oc-add').onclick = async ()=>{
+  const date = document.getElementById('oc-date').value;
+  const cid = document.getElementById('oc-customer').value;
+  const engineerIds = checkedEngineerIds(document.getElementById('oc-engineers'));
+  const type = document.getElementById('oc-type').value;
+  if(!date || !cid || engineerIds.length===0){ showToast('Fill in date, customer, and at least one engineer.'); return; }
+  await addAssignment(date, cid, engineerIds, type);
+  renderWeek();
+  showToast('Added to schedule.');
+};
+
+async function addAssignment(date, customerId, engineerIds, type){
+  if(!DB.assignments[date]) DB.assignments[date] = [];
+  DB.assignments[date].push({ id: uid(), customerId, engineerIds, type, status:'pending', visitId:null });
+  await storeSet('ftr_assignments', DB.assignments);
+}
+
+/* ===================== RENDER: ENGINEER VIEW ===================== */
+function renderEngineer(){
+  const sel = document.getElementById('eng-select');
+  const prev = sel.value;
+  fillSelect(sel, DB.engineers, e=>e.id, e=>e.name);
+  if(prev && DB.engineers.some(e=>e.id===prev)) sel.value = prev;
+  if(!document.getElementById('eng-date').value) document.getElementById('eng-date').value = fmtDate(today());
+
+  const engId = sel.value;
+  const dateStr = document.getElementById('eng-date').value;
+  const box = document.getElementById('eng-visit-list');
+  const list = (DB.assignments[dateStr]||[]).filter(a=>(a.engineerIds||[]).includes(engId));
+
+  if(!engId){
+    box.innerHTML = `<div class="empty">Add an engineer in Setup first.</div>`; return;
+  }
+  if(list.length===0){
+    box.innerHTML = `<div class="empty"><div class="big">📋</div>No visits assigned for this date.</div>`;
+    return;
+  }
+  box.innerHTML = list.map(a=>{
+    const cust = DB.customers.find(c=>c.id===a.customerId);
+    const teammates = (a.engineerIds||[]).filter(id=>id!==engId).map(id=>DB.engineers.find(e=>e.id===id)).filter(Boolean);
+    return `<div class="card" style="margin-bottom:10px;box-shadow:none;border:1px solid var(--line);">
+      <div class="row" style="margin-bottom:0;">
+        <div>
+          <div style="font-weight:600;font-size:14.5px;">${cust?esc(cust.name):'<i>deleted customer</i>'} <span class="stamp ${a.type==='SCH'?'sch':'oc'}" style="margin-left:6px;">${a.type}</span></div>
+          <div class="kv">${cust?esc(cust.contactPerson||''):''} ${cust&&cust.phone?' · '+esc(cust.phone):''}${teammates.length?' · with '+teammates.map(e=>esc(e.name)).join(', '):''}</div>
+        </div>
+        <div>
+          ${a.status==='done'
+            ? `<span class="stamp done">DONE</span>`
+            : `<button class="btn small fill-ftr" data-date="${dateStr}" data-aid="${a.id}">Fill FTR</button>`}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+document.getElementById('eng-select').addEventListener('change', renderEngineer);
+document.getElementById('eng-date').addEventListener('change', renderEngineer);
+document.getElementById('eng-visit-list').addEventListener('click', e=>{
+  const btn = e.target.closest('.fill-ftr');
+  if(!btn) return;
+  openFtrModal(btn.dataset.date, btn.dataset.aid);
+});
+
+/* ===================== FTR MODAL ===================== */
+let ftrCtx = null;
+
+function openFtrModal(dateStr, assignmentId){
+  const a = (DB.assignments[dateStr]||[]).find(x=>x.id===assignmentId);
+  if(!a) return;
+  const cust = DB.customers.find(c=>c.id===a.customerId);
+  const engs = (a.engineerIds||[]).map(id=>DB.engineers.find(e=>e.id===id)).filter(Boolean);
+  ftrCtx = { dateStr, assignmentId, troubleshooting: [""], feedback: null };
+
+  document.getElementById('ftr-sub').textContent = `${engs.map(e=>e.name).join(' & ')||''} · ${cust?cust.name:''} · ${humanDate(dateStr)}`;
+  const machineOpts = (cust?cust.machines:[]).map(m=>`<option value="${m.id}">${esc(m.brand)} ${esc(m.model)}${m.serial? ' — '+esc(m.serial):''}</option>`).join('');
+
+  document.getElementById('ftr-body').innerHTML = `
+    <div class="grid2">
+      <div class="field"><label>Service type</label>
+        <select id="f-type">
+          <option value="SCH" ${a.type==='SCH'?'selected':''}>SCH — Scheduled</option>
+          <option value="OC" ${a.type==='OC'?'selected':''}>OC — On-call</option>
+        </select>
+      </div>
+      <div class="field"><label>Machine</label>
+        <select id="f-machine">${machineOpts || '<option value="">No machine on file</option>'}</select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Problem with</label>
+      <div class="chk-list">
+        ${PROBLEM_OPTIONS.map(p=>`<div class="chk-item"><input type="checkbox" id="pw-${p}" value="${p}"><label for="pw-${p}">${p}</label></div>`).join('')}
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Troubleshooting</label>
+      <div id="ts-rows"></div>
+      <button class="btn subtle small" id="ts-add" type="button">+ Add line</button>
+    </div>
+
+    <div class="field">
+      <label>Engineer's comment</label>
+      <textarea id="f-comment" rows="2" placeholder="e.g. Jobs printed, now ok."></textarea>
+    </div>
+
+    <div class="grid3">
+      <div class="field"><label>From (hrs)</label><input type="time" id="f-from"></div>
+      <div class="field"><label>To (hrs)</label><input type="time" id="f-to"></div>
+      <div class="field"><label>Follow up required?</label>
+        <select id="f-followup"><option value="No">No</option><option value="Yes">Yes</option></select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Spares changed?</label>
+      <select id="f-spares"><option value="No">No</option><option value="Yes">Yes</option></select>
+      <input id="f-spares-names" placeholder="Names of parts, if changed" style="margin-top:6px;display:none;">
+    </div>
+
+    <div class="field">
+      <label>Customer feedback</label>
+      <div class="feedback-row" id="feedback-row">
+        ${['😊','🙂','😐','🙁','😞'].map((emo,i)=>`<div class="feedback-opt" data-val="${5-i}"><div>${emo}</div><div class="lbl">${['Excellent','Good','Okay','Poor','Bad'][i]}</div></div>`).join('')}
+      </div>
+    </div>
+  `;
+
+  renderTsRows();
+  document.getElementById('ts-add').onclick = ()=>{ ftrCtx.troubleshooting.push(""); renderTsRows(); };
+  document.getElementById('f-spares').onchange = (e)=>{
+    document.getElementById('f-spares-names').style.display = e.target.value==='Yes' ? 'block' : 'none';
+  };
+  document.getElementById('feedback-row').addEventListener('click', e=>{
+    const opt = e.target.closest('.feedback-opt');
+    if(!opt) return;
+    document.querySelectorAll('.feedback-opt').forEach(o=>o.classList.remove('selected'));
+    opt.classList.add('selected');
+    ftrCtx.feedback = Number(opt.dataset.val);
+  });
+
+  document.getElementById('ftr-overlay').classList.add('open');
+}
+
+function renderTsRows(){
+  const box = document.getElementById('ts-rows');
+  box.innerHTML = ftrCtx.troubleshooting.map((val,i)=>`
+    <div class="ts-row">
+      <span class="arrow">→</span>
+      <input type="text" class="ts-input" data-i="${i}" value="${esc(val)}" placeholder="e.g. Filters cleaned">
+      <button class="icon-btn ts-remove" data-i="${i}" title="Remove">✕</button>
+    </div>`).join('');
+  box.querySelectorAll('.ts-input').forEach(inp=>{
+    inp.oninput = ()=>{ ftrCtx.troubleshooting[Number(inp.dataset.i)] = inp.value; };
+  });
+  box.querySelectorAll('.ts-remove').forEach(btn=>{
+    btn.onclick = ()=>{ ftrCtx.troubleshooting.splice(Number(btn.dataset.i),1); if(ftrCtx.troubleshooting.length===0) ftrCtx.troubleshooting.push(""); renderTsRows(); };
+  });
+}
+
+document.getElementById('ftr-close').onclick = closeFtr;
+document.getElementById('ftr-cancel').onclick = closeFtr;
+function closeFtr(){ document.getElementById('ftr-overlay').classList.remove('open'); ftrCtx=null; }
+
+document.getElementById('ftr-save').onclick = async ()=>{
+  if(!ftrCtx) return;
+  const a = (DB.assignments[ftrCtx.dateStr]||[]).find(x=>x.id===ftrCtx.assignmentId);
+  if(!a) return;
+  const cust = DB.customers.find(c=>c.id===a.customerId);
+  const engs = (a.engineerIds||[]).map(id=>DB.engineers.find(e=>e.id===id)).filter(Boolean);
+
+  const problemWith = PROBLEM_OPTIONS.filter(p=>document.getElementById('pw-'+p).checked);
+  const machineId = document.getElementById('f-machine').value;
+  const machine = cust ? cust.machines.find(m=>m.id===machineId) : null;
+
+  const visit = {
+    id: uid(),
+    customerId: a.customerId,
+    engineerIds: a.engineerIds||[],
+    assignmentId: a.id,
+    date: ftrCtx.dateStr,
+    type: document.getElementById('f-type').value,
+    machine: machine ? `${machine.brand} ${machine.model}` : '',
+    problemWith,
+    troubleshooting: ftrCtx.troubleshooting.filter(t=>t.trim()),
+    comment: document.getElementById('f-comment').value.trim(),
+    hoursFrom: document.getElementById('f-from').value,
+    hoursTo: document.getElementById('f-to').value,
+    followUp: document.getElementById('f-followup').value,
+    sparesChanged: document.getElementById('f-spares').value,
+    sparesNames: document.getElementById('f-spares-names').value.trim(),
+    feedback: ftrCtx.feedback
+  };
+
+  DB.visits.push(visit);
+  a.status = 'done';
+  a.visitId = visit.id;
+
+  await storeSet('ftr_visits', DB.visits);
+  await storeSet('ftr_assignments', DB.assignments);
+
+  closeFtr();
+  renderAll();
+  offerViberMessage(visit, cust, engs);
+};
+
+/* ===================== VIBER MESSAGE ===================== */
+function offerViberMessage(visit, cust, engs){
+  const lines = [
+    `✅ Service completed — ${cust?cust.name:''}`,
+    `Engineer${engs.length>1?'s':''}: ${engs.map(e=>e.name).join(', ')}`,
+    `Date: ${humanDate(visit.date)}${visit.hoursFrom?` (${visit.hoursFrom}${visit.hoursTo?'–'+visit.hoursTo:''})`:''}`,
+    visit.machine ? `Machine: ${visit.machine}` : '',
+    visit.troubleshooting.length ? `Work done:\n${visit.troubleshooting.map(t=>'• '+t).join('\n')}` : '',
+    visit.comment ? `Note: ${visit.comment}` : '',
+    `Type: ${visit.type}`
+  ].filter(Boolean).join('\n');
+
+  const toast = document.getElementById('toast');
+  toast.innerHTML = `Visit saved. <button class="copybtn" id="copy-viber">Copy message for Viber</button>`;
+  toast.classList.add('show');
+  document.getElementById('copy-viber').onclick = ()=>{
+    navigator.clipboard.writeText(lines).then(()=>{
+      toast.innerHTML = 'Copied — paste it into the customer\'s Viber group.';
+      setTimeout(()=>toast.classList.remove('show'), 3500);
+    });
+  };
+  setTimeout(()=>{ if(toast.classList.contains('show')) toast.classList.remove('show'); }, 8000);
+}
+function showToast(msg){
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'), 3000);
+}
+
+/* ===================== LOG SHEET ===================== */
+function renderLog(){
+  fillSelect(document.getElementById('log-f-eng'), [{id:'',name:'All'},...DB.engineers], e=>e.id, e=>e.name);
+  fillSelect(document.getElementById('log-f-cust'), [{id:'',name:'All'},...DB.customers], c=>c.id, c=>c.name);
+
+  const fEng = document.getElementById('log-f-eng').value;
+  const fCust = document.getElementById('log-f-cust').value;
+  const fType = document.getElementById('log-f-type').value;
+
+  let visits = [...DB.visits].sort((a,b)=> a.date<b.date?1:-1);
+  if(fEng) visits = visits.filter(v=>(v.engineerIds||[]).includes(fEng));
+  if(fCust) visits = visits.filter(v=>v.customerId===fCust);
+  if(fType) visits = visits.filter(v=>v.type===fType);
+
+  const box = document.getElementById('log-table');
+  if(visits.length===0){ box.innerHTML = `<div class="empty">No visits logged yet.</div>`; return; }
+
+  box.innerHTML = `<table><thead><tr><th>Date</th><th>Engineer(s)</th><th>Customer</th><th>Type</th><th>Machine</th><th>Problem</th><th>Comment</th><th>Feedback</th></tr></thead><tbody>${
+    visits.map(v=>{
+      const cust = DB.customers.find(c=>c.id===v.customerId);
+      const engs = (v.engineerIds||[]).map(id=>DB.engineers.find(e=>e.id===id)).filter(Boolean);
+      return `<tr>
+        <td class="mono" style="font-size:12px;">${humanDate(v.date)}</td>
+        <td>${engs.length?esc(engs.map(e=>e.name).join(', ')):'—'}</td>
+        <td>${cust?esc(cust.name):'—'}</td>
+        <td><span class="stamp ${v.type==='SCH'?'sch':'oc'}">${v.type}</span></td>
+        <td style="font-size:12.5px;">${esc(v.machine||'—')}</td>
+        <td style="font-size:12.5px;">${v.problemWith.join(', ')||'—'}</td>
+        <td style="font-size:12.5px;max-width:180px;">${esc(v.comment||'—')}</td>
+        <td>${v.feedback? '★'.repeat(v.feedback) : '—'}</td>
+      </tr>`;
+    }).join('')
+  }</tbody></table>`;
+}
+['log-f-eng','log-f-cust','log-f-type'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', renderLog);
+});
+document.getElementById('log-export').onclick = ()=>{
+  const rows = [['Date','Engineers','Customer','Type','Machine','Problem With','Troubleshooting','Comment','Feedback']];
+  DB.visits.forEach(v=>{
+    const cust = DB.customers.find(c=>c.id===v.customerId);
+    const engs = (v.engineerIds||[]).map(id=>DB.engineers.find(e=>e.id===id)).filter(Boolean);
+    rows.push([v.date, engs.map(e=>e.name).join('; '), cust?cust.name:'', v.type, v.machine||'', v.problemWith.join('; '), v.troubleshooting.join('; '), v.comment||'', v.feedback||'']);
+  });
+  const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'ftr-visit-log.csv'; a.click();
+  URL.revokeObjectURL(url);
+};
+
+/* ===================== DASHBOARD ===================== */
+// Nepal's fiscal year runs Shrawan 1 (BS month 4) to Ashar-end of the following
+// BS year (BS month 3) — e.g. FY 2082/83 = Shrawan 1, 2082 – Ashar end, 2083.
+function currentFiscalYearBS(){
+  const bs = adToBs(today());
+  if(!bs) return 2082;
+  return bs.month >= 4 ? bs.year : bs.year - 1;
+}
+let dashFY = currentFiscalYearBS();
+const FY_MIN = 2000, FY_MAX = 2089; // needs both y and y+1 within the BS_MONTH_DAYS table
+
+function getDashboardPeriod(){
+  const y = Math.min(FY_MAX, Math.max(FY_MIN, dashFY));
+  const start = bsToAd(y, 4, 1);
+  const end = bsToAd(y+1, 3, bsLastDayOfMonth(y+1, 3));
+  const fallbackStart = new Date(y+56, 6, 16), fallbackEnd = new Date(y+57, 6, 15); // rough AD equivalent, only if table lookup ever fails
+  return { start: start||fallbackStart, end: end||fallbackEnd, label: `FY ${y}/${String(y+1).slice(-2)}`, y };
+}
+function periodMonths(period){
+  // the 12 BS months of the fiscal year, in order: Shrawan..Chaitra (y), then Baisakh..Asar (y+1)
+  const y = period.y;
+  const seq = [];
+  for(let m=4; m<=12; m++) seq.push({y, m});
+  for(let m=1; m<=3; m++) seq.push({y:y+1, m});
+  return seq.map(s=>{
+    const start = bsToAd(s.y, s.m, 1);
+    const end = bsToAd(s.y, s.m, bsLastDayOfMonth(s.y, s.m));
+    return { label: BS_MONTH_NAMES[s.m-1].slice(0,3), start, end };
+  }).filter(m=>m.start && m.end);
+}
+function proratedTarget(customer, period){
+  // fullTarget = what 17/year works out to for the portion of this fiscal year the
+  // customer is actually live for (accounts for a mid-year install date).
+  const daysInYear = Math.round((period.end-period.start)/86400000) + 1;
+  const install = customer.installDate ? parseDate(customer.installDate) : null;
+  let effectiveStart = period.start;
+  if(install && install > period.start) effectiveStart = install;
+  if(install && install > period.end){
+    return { fullTarget:0, applicable:false, effectiveStart:install, daysApplicable:0 };
+  }
+  const daysApplicable = Math.max(0, Math.round((period.end - effectiveStart)/86400000) + 1);
+  const fullTarget = daysApplicable<=0 ? 0 : Math.max(1, Math.round(YEARLY_TARGET * daysApplicable/daysInYear));
+  return { fullTarget, applicable:true, effectiveStart, daysApplicable };
+}
+// The number of visits that SHOULD have happened by today, given the full-period
+// target above — i.e. target × (fraction of the applicable period elapsed so far),
+// rounded down. If 25% of the year has passed and the annual target is 17, this
+// returns floor(17 × 0.25) = 4.
+function targetToDate(fullTarget, effectiveStart, period, daysApplicable){
+  if(fullTarget<=0 || daysApplicable<=0) return 0;
+  const now = today();
+  if(now < effectiveStart) return 0;
+  const clipped = now > period.end ? period.end : now;
+  const daysElapsed = Math.round((clipped-effectiveStart)/86400000)+1;
+  const fraction = Math.min(1, daysElapsed/daysApplicable);
+  return Math.floor(fullTarget * fraction);
+}
+
+function svgHBar(rows){
+  const width = 620, rowH = 26, gap = 8, leftW = 190, rightW = 60;
+  const barMaxW = width - leftW - rightW;
+  const maxVal = Math.max(1, ...rows.map(r=>Math.max(r.value, r.target||0)));
+  const height = rows.length*(rowH+gap) + gap;
+  const bars = rows.map((r,i)=>{
+    const y = gap + i*(rowH+gap);
+    const w = Math.round(r.value/maxVal*barMaxW);
+    const tX = r.target!=null ? leftW + Math.round(r.target/maxVal*barMaxW) : null;
+    return `
+      <text x="0" y="${y+rowH/2+4}" font-size="11.5" fill="${COLORS.inkFaint}" font-family="IBM Plex Sans">${esc(r.label.length>26?r.label.slice(0,25)+'…':r.label)}</text>
+      <rect x="${leftW}" y="${y}" width="${barMaxW}" height="${rowH}" fill="${COLORS.faint}" rx="4"></rect>
+      <rect x="${leftW}" y="${y}" width="${w}" height="${rowH}" fill="${r.color||COLORS.accent}" rx="4"></rect>
+      ${tX!=null?`<line x1="${tX}" y1="${y-3}" x2="${tX}" y2="${y+rowH+3}" stroke="${COLORS.ink}" stroke-width="2"/>`:''}
+      <text x="${leftW+barMaxW+8}" y="${y+rowH/2+4}" font-size="11.5" fill="${COLORS.ink}" font-family="IBM Plex Mono">${r.value}${r.target!=null?'/'+r.target:''}</text>
+    `;
+  }).join('');
+  return `<svg viewBox="0 0 ${width} ${Math.max(height,40)}" width="100%" style="max-width:640px;">${rows.length?bars:`<text x="10" y="24" font-size="12" fill="${COLORS.inkFaint}">No data yet.</text>`}</svg>`;
+}
+function svgVBarStacked(cols){
+  const width = 660, height = 200, padB = 26, padT = 10, gap = 8;
+  const maxVal = Math.max(1, ...cols.map(c=>c.a+c.b));
+  const n = Math.max(1, cols.length);
+  const barW = (width - gap*(n+1))/n;
+  const scale = (height-padT-padB)/maxVal;
+  const bars = cols.map((c,i)=>{
+    const x = gap + i*(barW+gap);
+    const hA = c.a*scale, hB = c.b*scale;
+    const yA = height-padB-hA, yB = yA-hB;
+    return `
+      ${hB>0?`<rect x="${x}" y="${yB}" width="${barW}" height="${hB}" fill="${COLORS.amber}" rx="2"/>`:''}
+      ${hA>0?`<rect x="${x}" y="${yA}" width="${barW}" height="${hA}" fill="${COLORS.accent}" rx="2"/>`:''}
+      <text x="${x+barW/2}" y="${height-padB+15}" font-size="10" fill="${COLORS.inkFaint}" text-anchor="middle" font-family="IBM Plex Mono">${esc(c.label)}</text>
+      ${(c.a+c.b)>0?`<text x="${x+barW/2}" y="${yB-4}" font-size="10" fill="${COLORS.ink}" text-anchor="middle" font-family="IBM Plex Mono">${c.a+c.b}</text>`:''}
+    `;
+  }).join('');
+  return `<svg viewBox="0 0 ${width} ${height}" width="100%" style="max-width:680px;">${bars}</svg>`;
+}
+
+function renderDashboard(){
+  const period = getDashboardPeriod();
+  document.getElementById('dash-period-label').textContent = period.label;
+  document.getElementById('dash-period-sub').textContent = `${period.start.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})} – ${period.end.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`;
+
+  // ---- coverage: chart + table ----
+  const coverageRows = DB.customers.map(c=>{
+    const { fullTarget, effectiveStart, applicable, daysApplicable } = proratedTarget(c, period);
+    const count = DB.visits.filter(v=>v.customerId===c.id && v.type==='SCH' && parseDate(v.date)>=period.start && parseDate(v.date)<=period.end).length;
+    const target = applicable ? targetToDate(fullTarget, effectiveStart, period, daysApplicable) : 0;
+    const behind = applicable && count < target;
+    const ahead = applicable && count > target;
+    const color = !applicable ? COLORS.inkFaint : behind ? COLORS.warn : ahead ? COLORS.ok : COLORS.accent;
+    return { c, target, fullTarget, count, applicable, behind, ahead, color };
+  });
+
+  document.getElementById('dash-chart-coverage').innerHTML = svgHBar(
+    coverageRows.filter(r=>r.applicable).map(r=>({ label:r.c.name, value:r.count, target:r.target, color:r.color }))
+  );
+
+  const tblBox = document.getElementById('dash-table');
+  if(DB.customers.length===0){
+    tblBox.innerHTML = `<div class="empty">Add customers in Setup to see coverage.</div>`;
+  } else {
+    tblBox.innerHTML = `<table><thead><tr><th>Customer</th><th>SCH visits</th><th>Target to date</th><th>Status</th><th>Progress</th></tr></thead><tbody>${
+      coverageRows.map(r=>{
+        if(!r.applicable){
+          return `<tr><td><b>${esc(r.c.name)}</b></td><td class="mono">—</td><td class="mono">—</td><td><span class="stamp pending">NOT YET INSTALLED</span></td><td></td></tr>`;
+        }
+        const pct = r.target>0 ? Math.min(100, Math.round(r.count/r.target*100)) : (r.count>0 ? 100 : 0);
+        const fillClass = r.behind?'behind':r.ahead?'ahead':'';
+        const status = r.behind ? `<span class="stamp overdue">BEHIND</span>` : r.ahead ? `<span class="stamp done">AHEAD</span>` : `<span class="stamp sch">ON PACE</span>`;
+        return `<tr>
+          <td><b>${esc(r.c.name)}</b></td>
+          <td class="mono">${r.count}</td>
+          <td class="mono">${r.target}<span style="color:var(--ink-faint);font-size:11px;"> /${r.fullTarget} yr</span></td>
+          <td>${status}</td>
+          <td style="min-width:140px;">
+            <div class="progress-track"><div class="progress-fill ${fillClass}" style="width:${pct}%;"></div></div>
+            <div style="font-size:11px;color:var(--ink-faint);margin-top:3px;">${pct}%</div>
+          </td>
+        </tr>`;
+      }).join('')
+    }</tbody></table>`;
+  }
+
+  // ---- monthly trend chart ----
+  const months = periodMonths(period);
+  const cols = months.map(m=>{
+    const a = DB.visits.filter(v=>v.type==='SCH' && parseDate(v.date)>=m.start && parseDate(v.date)<=m.end).length;
+    const b = DB.visits.filter(v=>v.type==='OC' && parseDate(v.date)>=m.start && parseDate(v.date)<=m.end).length;
+    return { label:m.label, a, b };
+  });
+  document.getElementById('dash-chart-monthly').innerHTML = svgVBarStacked(cols);
+
+  // ---- engineer load chart ----
+  const engRows = DB.engineers.map(e=>{
+    const visits = DB.visits.filter(v=>(v.engineerIds||[]).includes(e.id) && parseDate(v.date)>=period.start && parseDate(v.date)<=period.end);
+    return { label:e.name, a: visits.filter(v=>v.type==='SCH').length, b: visits.filter(v=>v.type==='OC').length };
+  });
+  document.getElementById('dash-chart-engineers').innerHTML = svgVBarStacked(engRows);
+}
+
+document.getElementById('dash-prev').onclick = ()=>{ dashFY--; renderDashboard(); };
+document.getElementById('dash-next').onclick = ()=>{ dashFY++; renderDashboard(); };
+
+/* ===================== SETUP: ENGINEERS ===================== */
+function renderEngineerTable(){
+  const box = document.getElementById('engineer-table');
+  if(DB.engineers.length===0){ box.innerHTML = `<div class="empty">No engineers yet.</div>`; return; }
+  box.innerHTML = `<table><thead><tr><th>Name</th><th></th></tr></thead><tbody>${
+    DB.engineers.map(e=>`<tr><td><input type="text" class="eng-name-edit" data-id="${e.id}" value="${esc(e.name)}"></td><td><button class="icon-btn eng-del" data-id="${e.id}">✕</button></td></tr>`).join('')
+  }</tbody></table>`;
+}
+document.getElementById('eng-add-btn').onclick = async ()=>{
+  DB.engineers.push({id: uid(), name:'New engineer'});
+  await storeSet('ftr_engineers', DB.engineers);
+  renderAll();
+};
+document.getElementById('engineer-table').addEventListener('change', async e=>{
+  const inp = e.target.closest('.eng-name-edit');
+  if(!inp) return;
+  const eng = DB.engineers.find(x=>x.id===inp.dataset.id);
+  if(eng){ eng.name = inp.value.trim() || eng.name; await storeSet('ftr_engineers', DB.engineers); renderAll(); }
+});
+document.getElementById('engineer-table').addEventListener('click', async e=>{
+  const btn = e.target.closest('.eng-del');
+  if(!btn) return;
+  if(!confirm('Remove this engineer?')) return;
+  DB.engineers = DB.engineers.filter(x=>x.id!==btn.dataset.id);
+  DB.customers.forEach(c=>{ c.assignedEngineers = (c.assignedEngineers||[]).filter(id=>id!==btn.dataset.id); });
+  await storeSet('ftr_engineers', DB.engineers);
+  await storeSet('ftr_customers', DB.customers);
+  renderAll();
+});
+
+/* ===================== SETUP: CUSTOMERS ===================== */
+function renderCustomerTable(){
+  const box = document.getElementById('customer-table');
+  if(DB.customers.length===0){ box.innerHTML = `<div class="empty">No customers yet.</div>`; return; }
+  box.innerHTML = `<table><thead><tr><th>Customer</th><th>Contact</th><th>Machines</th><th>Engineers</th><th>Install date</th><th>Last SCH visit</th><th></th></tr></thead><tbody>${
+    DB.customers.map(c=>{
+      const engChips = (c.assignedEngineers||[]).map(id=>{
+        const e = DB.engineers.find(x=>x.id===id);
+        return e ? `<span class="chip">${esc(e.name)}</span>` : '';
+      }).join('');
+      return `<tr>
+        <td><b>${esc(c.name)}</b><div style="font-size:12px;color:var(--ink-faint);">${esc(c.address||'')}</div></td>
+        <td style="font-size:12.5px;">${esc(c.contactPerson||'—')}${c.phone?'<br>'+esc(c.phone):''}</td>
+        <td style="font-size:12.5px;">${c.machines.map(m=>`${esc(m.brand)} ${esc(m.model)}`).join('<br>')||'—'}</td>
+        <td>${engChips||'<span style="color:var(--ink-faint);font-size:12px;">none</span>'}</td>
+        <td class="mono" style="font-size:12px;">${c.installDate?humanDate(c.installDate):'—'}</td>
+        <td class="mono" style="font-size:12px;">${lastSchVisitDate(c.id)?humanDate(lastSchVisitDate(c.id)):'never'}</td>
+        <td><button class="btn small subtle cust-edit" data-id="${c.id}">Edit</button></td>
+      </tr>`;
+    }).join('')
+  }</tbody></table>`;
+}
+document.getElementById('customer-table').addEventListener('click', e=>{
+  const btn = e.target.closest('.cust-edit');
+  if(!btn) return;
+  openCustomerModal(btn.dataset.id);
+});
+document.getElementById('cust-add-btn').onclick = ()=>openCustomerModal(null);
+
+let custCtx = null;
+function openCustomerModal(id){
+  const existing = id ? DB.customers.find(c=>c.id===id) : null;
+  custCtx = existing ? JSON.parse(JSON.stringify(existing)) : {
+    id: uid(), name:'', address:'', contactPerson:'', phone:'', initialLastVisit:'', installDate:'', assignedEngineers:[], machines: []
+  };
+  if(!custCtx.assignedEngineers) custCtx.assignedEngineers = [];
+  document.getElementById('cust-modal-title').textContent = existing ? 'Edit customer' : 'Add customer';
+  document.getElementById('cust-delete').style.display = existing ? 'inline-block' : 'none';
+  renderCustomerForm();
+  document.getElementById('cust-overlay').classList.add('open');
+}
+function renderCustomerForm(){
+  document.getElementById('cust-body').innerHTML = `
+    <div class="field"><label>Customer name</label><input id="cf-name" value="${esc(custCtx.name)}"></div>
+    <div class="grid2">
+      <div class="field"><label>Contact person</label><input id="cf-contact" value="${esc(custCtx.contactPerson)}"></div>
+      <div class="field"><label>Phone</label><input id="cf-phone" value="${esc(custCtx.phone)}"></div>
+    </div>
+    <div class="field"><label>Address</label><input id="cf-address" value="${esc(custCtx.address)}"></div>
+    <div class="grid2">
+      <div class="field"><label>Last SCH visit</label><input type="date" id="cf-lastvisit" value="${esc(custCtx.initialLastVisit)}">
+        <div class="hint">Seed value, only used for scheduling until a real visit is logged.</div>
+      </div>
+      <div class="field"><label>Install date</label><input type="date" id="cf-installdate" value="${esc(custCtx.installDate)}">
+        <div class="hint">If installed mid-year, the dashboard prorates the 17/year target from this date.</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Assigned engineers</label>
+      <div class="chk-list" id="cf-engineers">
+        ${DB.engineers.map(e=>`<div class="chk-item"><input type="checkbox" class="cf-eng-chk" value="${e.id}" ${custCtx.assignedEngineers.includes(e.id)?'checked':''}><label>${esc(e.name)}</label></div>`).join('') || '<div class="empty" style="padding:8px;">Add engineers in Setup first.</div>'}
+      </div>
+      <div class="hint">These are starred first in the weekly assignment dropdown.</div>
+    </div>
+    <div class="field">
+      <label>Machines</label>
+      <div id="cf-machines"></div>
+      <button class="btn subtle small" id="cf-machine-add" type="button">+ Add machine</button>
+    </div>
+  `;
+  renderMachineRows();
+  document.getElementById('cf-machine-add').onclick = ()=>{ custCtx.machines.push({id:uid(),brand:'Konica Minolta',model:'',serial:''}); renderMachineRows(); };
+}
+function renderMachineRows(){
+  const box = document.getElementById('cf-machines');
+  box.innerHTML = custCtx.machines.map((m,i)=>`
+    <div class="grid3" style="margin-bottom:8px;align-items:end;">
+      <div class="field" style="margin-bottom:0;"><label>Brand</label>
+        <select class="m-brand" data-i="${i}">${MACHINE_BRANDS.map(b=>`<option value="${b}" ${b===m.brand?'selected':''}>${b}</option>`).join('')}</select>
+      </div>
+      <div class="field" style="margin-bottom:0;"><label>Model</label><input class="m-model" data-i="${i}" value="${esc(m.model)}"></div>
+      <div class="field" style="margin-bottom:0;display:flex;gap:6px;align-items:end;">
+        <div style="flex:1;"><label>Serial no.</label><input class="m-serial" data-i="${i}" value="${esc(m.serial)}"></div>
+        <button class="icon-btn m-remove" data-i="${i}" title="Remove">✕</button>
+      </div>
+    </div>`).join('') || `<div class="empty" style="padding:14px;">No machines added.</div>`;
+  box.querySelectorAll('.m-brand').forEach(s=>s.onchange=()=>{custCtx.machines[Number(s.dataset.i)].brand=s.value;});
+  box.querySelectorAll('.m-model').forEach(s=>s.oninput=()=>{custCtx.machines[Number(s.dataset.i)].model=s.value;});
+  box.querySelectorAll('.m-serial').forEach(s=>s.oninput=()=>{custCtx.machines[Number(s.dataset.i)].serial=s.value;});
+  box.querySelectorAll('.m-remove').forEach(b=>b.onclick=()=>{custCtx.machines.splice(Number(b.dataset.i),1); renderMachineRows();});
+}
+document.getElementById('cust-close').onclick = closeCustModal;
+document.getElementById('cust-cancel').onclick = closeCustModal;
+function closeCustModal(){ document.getElementById('cust-overlay').classList.remove('open'); custCtx=null; }
+
+document.getElementById('cust-save').onclick = async ()=>{
+  custCtx.name = document.getElementById('cf-name').value.trim();
+  custCtx.contactPerson = document.getElementById('cf-contact').value.trim();
+  custCtx.phone = document.getElementById('cf-phone').value.trim();
+  custCtx.address = document.getElementById('cf-address').value.trim();
+  custCtx.initialLastVisit = document.getElementById('cf-lastvisit').value;
+  custCtx.installDate = document.getElementById('cf-installdate').value;
+  custCtx.assignedEngineers = Array.from(document.querySelectorAll('.cf-eng-chk:checked')).map(i=>i.value);
+  if(!custCtx.name){ showToast('Customer name is required.'); return; }
+
+  const idx = DB.customers.findIndex(c=>c.id===custCtx.id);
+  if(idx>=0) DB.customers[idx] = custCtx; else DB.customers.push(custCtx);
+  await storeSet('ftr_customers', DB.customers);
+  closeCustModal();
+  renderAll();
+};
+document.getElementById('cust-delete').onclick = async ()=>{
+  if(!confirm('Delete this customer? Their logged visits will remain in history.')) return;
+  DB.customers = DB.customers.filter(c=>c.id!==custCtx.id);
+  await storeSet('ftr_customers', DB.customers);
+  closeCustModal();
+  renderAll();
+};
+
+/* ===================== RENDER ALL ===================== */
+function renderAll(){
+  renderWeek();
+  renderEngineer();
+  renderLog();
+  renderDashboard();
+  renderEngineerTable();
+  renderCustomerTable();
+}
+
+/* ===================== INIT ===================== */
+function showSyncBanner(){
+  const el = document.getElementById('sync-banner');
+  if(fsDb){
+    el.style.display = 'block';
+    el.style.background = 'var(--ok-soft)'; el.style.color = 'var(--ok)';
+    el.textContent = '● Synced with Firebase — changes are shared across every device';
+    setTimeout(()=>{ el.style.display='none'; }, 4000); // don't nag once it's working
+  } else {
+    el.style.display = 'block';
+    el.style.background = 'var(--warn-soft)'; el.style.color = 'var(--warn)';
+    el.textContent = FS_CONFIGURED
+      ? '● Firebase is configured but not reachable here (expected in Claude\'s preview — will work once hosted)'
+      : '● Not connected to Firebase yet — data will not be saved. See setup notes at the top of the <script> tag in this file.';
+  }
+}
+
+async function init(){
+  const [customers, engineers, visits, assignments] = await Promise.all([
+    storeGet('ftr_customers', null),
+    storeGet('ftr_engineers', null),
+    storeGet('ftr_visits', []),
+    storeGet('ftr_assignments', {})
+  ]);
+
+  if(customers===null && engineers===null){
+    const seed = seedData();
+    DB = seed;
+    await Promise.all([
+      storeSet('ftr_customers', DB.customers),
+      storeSet('ftr_engineers', DB.engineers),
+      storeSet('ftr_visits', DB.visits),
+      storeSet('ftr_assignments', DB.assignments)
+    ]);
+  } else {
+    DB = { customers: customers||[], engineers: engineers||[], visits: visits||[], assignments: assignments||{} };
+    DB.customers.forEach(c=>{ if(!c.assignedEngineers) c.assignedEngineers = []; if(c.installDate===undefined) c.installDate=''; });
+    // migrate older single-engineer assignments/visits (pre multi-engineer support)
+    Object.values(DB.assignments).forEach(list=>{
+      list.forEach(a=>{ if(!a.engineerIds){ a.engineerIds = a.engineerId ? [a.engineerId] : []; delete a.engineerId; } });
+    });
+    DB.visits.forEach(v=>{ if(!v.engineerIds){ v.engineerIds = v.engineerId ? [v.engineerId] : []; delete v.engineerId; } });
+  }
+  renderAll();
+  showSyncBanner();
+  attachLiveSync();
+}
+init();
+
+// PWA: register the service worker for offline app-shell caching (best-effort —
+// silently does nothing if unsupported, e.g. inside Claude's own preview sandbox).
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
